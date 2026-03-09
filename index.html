@@ -27,8 +27,8 @@ body{
   border-radius:18px;
   background:rgba(58, 132, 241, 0.074);
   backdrop-filter:blur(3px);
-  border:1px solid rgba(178, 9, 229, 0.638);
-  box-shadow:0px 0 32px rgba(110, 8, 243, 0.708);
+  border:1px solid rgba(9, 214, 229, 0.638);
+  box-shadow:0px 0 32px rgba(0, 0, 160, 0.708);
 }
 .owner{text-align:center;color:#ccc;margin-bottom:5px;letter-spacing:1px;}
 h2{text-align:center;color:#00eaff;margin-bottom:20px;
@@ -54,10 +54,12 @@ button{
   font-weight:bold;
   transition:0.25s;
 }
-.add-btn{background:#8d29eb;color:white;}
-.generate-btn{background:#f345c7;color:white;}
-.reset-btn{background:#f10c3e;color:white;}
-.delete-btn{background:#ea580c;color:white;display:flex;align-items:center;justify-content:center;height:40px;padding:0 15px;}
+.add-btn{background:#08066e;color:white;}
+.add-btn:hover{background:#03022e;color:white; }
+.generate-btn{background:#08066e;color:white;}
+.generate-btn:hover{background:#03022e;color:white; }
+.reset-btn{background:#830000;color:white;}
+.reset-btn:hover{background:#630101;color:white;}
 button:hover{transform:scale(1.04);opacity:0.9;}
 
 
@@ -95,7 +97,7 @@ button:hover{transform:scale(1.04);opacity:0.9;}
 
 /* BUTTONS */
 .delete-btn{
-  background:#ea580c;
+  background:#9c0505;
   color:white;
   display:flex;
   align-items:center;
@@ -105,7 +107,10 @@ button:hover{transform:scale(1.04);opacity:0.9;}
   font-size:12px;
   border-radius:6px;
 }
-button:hover{transform:scale(1.03);opacity:0.9;}
+.delete-btn:hover{
+  background:#740303;
+  transform:scale(1.03);opacity:0.9;
+}
 
 /* TABLE */
 .table-wrapper{
@@ -119,7 +124,7 @@ button:hover{transform:scale(1.03);opacity:0.9;}
   min-width:600px;
 }
 #gradingSheet th{
-  background:rgba(222,30,75,0.8);
+  background:rgba(27, 0, 103, 0.951);
   color:white;
   padding:12px;
 }
@@ -199,36 +204,66 @@ function addSubject(){
   document.getElementById("subjects").appendChild(div)
 }
 
-function removeSubject(btn){btn.parentElement.remove()}
+function removeSubject(btn){
+  btn.parentElement.remove()
+}
 
 function generateSheet(){
   const name=document.getElementById("studentName").value.trim()
-  if(name===""){alert("Enter student name"); return}
+  if(name===""){alert("Enter student name");return}
 
   const subjectRows=document.querySelectorAll(".subject-row")
-  if(subjectsList.length===0){
-    subjectRows.forEach(row=>{
-      let sub=row.children[0].value.trim().toUpperCase()
-      if(sub!==""){
-        subjectsList.push(sub)
-        let th=document.createElement("th")
-        th.innerText=sub
-        document.getElementById("sheetHeader").insertBefore(th,document.getElementById("sheetHeader").children[2])
-      }
+  let newSubjects=[]
+
+  subjectRows.forEach(row=>{
+    let sub=row.children[0].value.trim().toUpperCase()
+    if(sub!=="" && !subjectsList.includes(sub)){
+      newSubjects.push(sub)
+      subjectsList.push(sub)
+    }
+  })
+
+  /* ADD NEW SUBJECT COLUMNS */
+  if(newSubjects.length>0){
+
+    const header=document.getElementById("sheetHeader")
+
+    newSubjects.forEach(sub=>{
+      const th=document.createElement("th")
+      th.innerText=sub
+
+      header.insertBefore(th,header.children[header.children.length-3])
+
+      /* ADD EMPTY CELL TO EXISTING ROWS */
+      document.querySelectorAll("#sheetBody tr").forEach(row=>{
+        const td=document.createElement("td")
+        td.innerHTML=`<input type="number" min="0" max="99" class="gradeInput" oninput="limitDigits(this);calculateAverage(this)">`
+        row.insertBefore(td,row.children[row.children.length-3])
+      })
     })
   }
 
+  /* CREATE NEW STUDENT ROW */
   const tr=document.createElement("tr")
   studentCount++
+
   let rowHTML=`<td>${studentCount}</td><td>${name}</td>`
-  subjectsList.forEach(sub=>{
+
+  subjectsList.forEach(()=>{
     rowHTML+=`<td><input type="number" min="0" max="99" class="gradeInput" oninput="limitDigits(this);calculateAverage(this)"></td>`
   })
-  rowHTML+=`<td class="avg">0</td><td class="equiv">-</td><td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>`
+
+  rowHTML+=`
+  <td class="avg">0</td>
+  <td class="equiv">-</td>
+  <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+  `
+
   tr.innerHTML=rowHTML
+
   document.getElementById("sheetBody").appendChild(tr)
   document.getElementById("studentName").value=""
-  
+
   document.getElementById("tableWrapper").style.display="block"
 }
 
@@ -238,19 +273,25 @@ function limitDigits(input){
 }
 
 function calculateAverage(input){
-  const row = input.closest("tr")
-  const grades = row.querySelectorAll(".gradeInput")
-  let total = 0, count = 0
-  grades.forEach(g => {
-    let val = parseFloat(g.value)
-    if(!isNaN(val)){ total += val; count++ }
-  })
-  let avg = count ? total / count : 0
-  row.querySelector(".avg").innerText = avg.toFixed(2)
+  const row=input.closest("tr")
+  const grades=row.querySelectorAll(".gradeInput")
 
-  let equiv = parseFloat(gradeEquivalent(avg))
-  row.querySelector(".equiv").innerText = equiv.toFixed(2)
-  // Removed remark column logic
+  let total=0
+  let count=0
+
+  grades.forEach(g=>{
+    let val=parseFloat(g.value)
+    if(!isNaN(val)){
+      total+=val
+      count++
+    }
+  })
+
+  let avg=count?total/count:0
+  row.querySelector(".avg").innerText=avg.toFixed(2)
+
+  let equiv=parseFloat(gradeEquivalent(avg))
+  row.querySelector(".equiv").innerText=equiv.toFixed(2)
 }
 
 function gradeEquivalent(avg){
@@ -274,7 +315,9 @@ function deleteRow(btn){
 function updateNumbering(){
   let rows=document.querySelectorAll("#sheetBody tr")
   let count=1
-  rows.forEach(r=>{r.children[0].innerText=count++})
+  rows.forEach(r=>{
+    r.children[0].innerText=count++
+  })
   studentCount=rows.length
 }
 
@@ -284,17 +327,18 @@ function resetAll(){
   document.getElementById("studentName").value=""
   document.getElementById("sheetHeader").innerHTML=`<th>No.</th><th>Name</th><th>Average</th><th>Equivalent</th><th>Action</th>`
   document.getElementById("tableWrapper").style.display="none"
+
   subjectsList=[]
   studentCount=0
 }
 
 function searchStudent(){
   let input=document.getElementById("searchBar").value.toLowerCase()
+
   document.querySelectorAll("#sheetBody tr").forEach(r=>{
     let name=r.children[1].innerText.toLowerCase()
     r.style.display=name.includes(input)?"":"none"
   })
 }
 </script>
-</body>
 </html>
